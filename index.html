@@ -36,6 +36,13 @@
   .b:active { transform:scale(.92); }
   .b.prim { background:var(--azul); color:#fff; box-shadow:none; }
   .b svg { width:44%; height:44%; }
+  .barra { flex:none; display:flex; align-items:center; gap:14px; font-weight:600; font-size:clamp(13px,1.6vh,16px); color:#6b7079; font-variant-numeric:tabular-nums; }
+  .pista { position:relative; flex:1; margin:0 12px; height:36px; cursor:pointer; touch-action:none; }
+  .pista::before { content:""; position:absolute; left:0; right:0; top:50%; height:8px; translate:0 -50%; border-radius:8px; background:#dfe3e9; }
+  .cargado, .hecho { position:absolute; left:0; top:50%; height:8px; translate:0 -50%; border-radius:8px; }
+  .cargado { background:#c9d2de; } .hecho { background:var(--azul); }
+  .perilla { position:absolute; top:50%; width:22px; height:22px; translate:-50% -50%; border-radius:50%; background:#fff; box-shadow:0 0 0 4px var(--azul), 0 4px 12px rgba(24,24,24,.2); transition:width .15s, height .15s; }
+  .pista:active .perilla, .pista.arrastra .perilla { width:28px; height:28px; }
   @media (orientation:portrait) { .app { justify-content:center; } header { margin-bottom:auto; } footer { margin-bottom:auto; } .escena { flex:none; } video { height:auto; aspect-ratio:16/9; } }
   @media (max-width:640px) { footer { flex-direction:column; align-items:stretch; gap:12px; } .botones { justify-content:center; } .texto h1 { white-space:normal; } }
 </style>
@@ -51,6 +58,7 @@
     <button class="flecha izq" id="ant" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <button class="flecha der" id="sig" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>
+  <div class="barra"><span id="ya">0:00</span><div class="pista" id="pista"><div class="cargado" id="cargado"></div><div class="hecho" id="hecho"></div><div class="perilla" id="perilla"></div></div><span id="total">0:00</span></div>
   <footer>
     <div class="texto"><small id="tema"></small><h1 id="titulo"></h1></div>
     <div class="botones">
@@ -98,6 +106,21 @@ $("atras").onclick = () => v.currentTime = Math.max(0, v.currentTime - 10);
 $("sonido").onclick = () => { v.muted = !v.muted; estado(); };
 $("full").onclick = () => document.fullscreenElement ? document.exitFullscreen() : (document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : v.webkitEnterFullscreen && v.webkitEnterFullscreen());
 v.onplay = v.onpause = v.onvolumechange = estado;
+// barra para explorar el video: tocar o arrastrar
+const mmss = (s) => isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00";
+let arrastrando = false;
+function pintar(t) {
+  const d = v.duration || 0, p = d ? Math.min(1, t / d) * 100 : 0;
+  $("hecho").style.width = p + "%"; $("perilla").style.left = p + "%";
+  $("ya").textContent = mmss(t); $("total").textContent = mmss(d);
+  if (v.buffered.length && d) $("cargado").style.width = (v.buffered.end(v.buffered.length - 1) / d) * 100 + "%";
+}
+v.ontimeupdate = v.onloadedmetadata = v.onprogress = () => { if (!arrastrando) pintar(v.currentTime); };
+const pista = $("pista");
+const aTiempo = (e) => { const r = pista.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (v.duration || 0); };
+pista.onpointerdown = (e) => { arrastrando = true; pista.classList.add("arrastra"); pista.setPointerCapture(e.pointerId); pintar(aTiempo(e)); };
+pista.onpointermove = (e) => { if (arrastrando) pintar(aTiempo(e)); };
+pista.onpointerup = pista.onpointercancel = (e) => { if (!arrastrando) return; arrastrando = false; pista.classList.remove("arrastra"); v.currentTime = aTiempo(e); };
 v.onended = () => ir(i + 1);
 addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") ir(i + 1);
