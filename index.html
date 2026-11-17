@@ -20,15 +20,34 @@
   .puntos i { width:9px; height:9px; border-radius:9px; background:#d5dae1; transition:all .3s; }
   .puntos i.on { width:28px; background:var(--azul); }
 
-  .escena { flex:1; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; }
+  .escena { flex:1; min-height:0; min-width:0; position:relative; display:flex; align-items:center; justify-content:center; gap:clamp(12px,2vw,28px); }
   /* el marco toma la forma exacta de cada video: sin barras negras */
-  .marco { position:relative; width:100%; aspect-ratio:16/9; max-height:100%; border-radius:clamp(12px,1.6vw,24px); overflow:hidden; box-shadow:0 18px 50px rgba(24,24,24,.16); background:#e3e6eb; }
+  .marco { flex:none; position:relative; width:100%; aspect-ratio:16/9; max-height:100%; border-radius:clamp(12px,1.6vw,24px); overflow:hidden; box-shadow:0 18px 50px rgba(24,24,24,.16); background:#e3e6eb; }
   video { width:100%; height:100%; object-fit:cover; display:block; }
-  .flecha { position:absolute; top:50%; translate:0 -50%; width:clamp(46px,5vw,64px); height:clamp(46px,5vw,64px); border-radius:50%; background:rgba(255,255,255,.72); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 6px 20px rgba(0,0,0,.18); display:grid; place-items:center; color:var(--negro); transition:transform .15s, background .2s; }
-  .flecha:hover { background:rgba(255,255,255,.92); }
+  .flecha { flex:none; width:clamp(46px,5vw,64px); height:clamp(46px,5vw,64px); border-radius:50%; background:#fff; box-shadow:0 0 0 1.5px #e3e6eb inset; display:grid; place-items:center; color:var(--negro); transition:transform .15s, box-shadow .2s; }
+  .flecha:hover { box-shadow:0 0 0 1.5px #c9cfd8 inset; }
   .flecha:active { transform:scale(.92); }
   .flecha svg { width:42%; height:42%; }
-  .izq { left:clamp(10px,1.5vw,22px); } .der { right:clamp(10px,1.5vw,22px); }
+  .derecha { display:flex; align-items:center; gap:18px; }
+  .abrir { display:inline-flex; align-items:center; gap:10px; height:44px; padding:0 18px; border-radius:99px; background:#fff; box-shadow:0 0 0 1.5px #e3e6eb inset; font-weight:600; font-size:15px; color:var(--negro); }
+  .abrir svg { width:18px; height:18px; }
+  /* lista desplegable */
+  .velo { position:fixed; inset:0; background:rgba(24,24,24,.35); opacity:0; pointer-events:none; transition:opacity .25s; z-index:5; }
+  .panel { position:fixed; top:0; right:0; bottom:0; width:min(440px,100vw); background:var(--fondo); box-shadow:-20px 0 60px rgba(24,24,24,.2); transform:translateX(110%); visibility:hidden; transition:transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s .3s; z-index:6; display:flex; flex-direction:column; }
+  .abierta .velo { opacity:1; pointer-events:auto; } .abierta .panel { transform:none; visibility:visible; transition:transform .3s cubic-bezier(.2,.8,.2,1); }
+  .panel header { padding:20px 20px 12px; }
+  .panel h2 { font-size:20px; font-weight:700; }
+  .cerrar { width:44px; height:44px; border-radius:50%; background:#fff; box-shadow:0 0 0 1.5px #e3e6eb inset; display:grid; place-items:center; }
+  .cerrar svg { width:20px; height:20px; }
+  .lista { overflow:auto; padding:4px 20px 20px; display:flex; flex-direction:column; gap:10px; }
+  .item { display:grid; grid-template-columns:140px 1fr; gap:14px; align-items:center; text-align:left; background:#fff; border-radius:14px; padding:8px; box-shadow:0 0 0 1.5px #e3e6eb inset; }
+  .item img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:9px; display:block; }
+  .item b { display:block; font-size:14px; font-weight:600; line-height:1.25; }
+  .item small { display:block; font-size:12px; color:var(--azul); font-weight:600; margin-top:4px; }
+  .item.on { box-shadow:0 0 0 2.5px var(--azul) inset; }
+  .solo-cel { display:none !important; }
+  @media (max-width:700px) { .escena > .flecha { display:none; } .solo-cel { display:grid !important; } }
+  @media (max-width:640px) { .abrir span { display:none; } .abrir { padding:0 13px; } .puntos { display:none; } }
 
   footer { flex:none; display:flex; align-items:center; justify-content:space-between; gap:20px; }
   .texto { min-width:0; }
@@ -54,26 +73,36 @@
 <div class="app">
   <header>
     <img src="img/neisstech-logo.svg" alt="Neisstech">
-    <div class="puntos" id="puntos"></div>
+    <div class="derecha">
+      <div class="puntos" id="puntos"></div>
+      <button class="abrir" id="abrir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Todos los videos</span></button>
+    </div>
   </header>
   <div class="escena">
+    <button class="flecha" id="ant" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="marco" id="marco">
       <video id="v" playsinline preload="auto"></video>
-      <button class="flecha izq" id="ant" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-      <button class="flecha der" id="sig" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
+    <button class="flecha" id="sig" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>
   <div class="barra"><span id="ya">0:00</span><div class="pista" id="pista"><div class="cargado" id="cargado"></div><div class="hecho" id="hecho"></div><div class="perilla" id="perilla"></div></div><span id="total">0:00</span></div>
   <footer>
     <div class="texto"><small id="tema"></small><h1 id="titulo"></h1></div>
     <div class="botones">
+      <button class="b solo-cel" id="ant2" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="b" id="atras" aria-label="Retroceder 10 segundos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
       <button class="b prim" id="play" aria-label="Reproducir o pausar"><svg id="ico" viewBox="0 0 24 24" fill="currentColor"></svg></button>
       <button class="b" id="sonido" aria-label="Sonido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/><path id="ondas" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/><path id="mute" d="M23 9l-6 6M17 9l6 6"/></svg></button>
       <button class="b" id="full" aria-label="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+      <button class="b solo-cel" id="sig2" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
   </footer>
 </div>
+<div class="velo" id="velo"></div>
+<aside class="panel" aria-label="Todos los videos">
+  <header><h2>Todos los videos</h2><button class="cerrar" id="cerrar" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+  <div class="lista" id="lista"></div>
+</aside>
 <script>
 const VIDEOS = [
   { f: "cruce-cd", t: "Cruce inteligente en un centro de distribución", g: "Gestión de tráfico" },
@@ -96,6 +125,7 @@ function ir(k) {
   v.src = `videos/${x.f}.mp4`; v.poster = `img/${x.f}.jpg`;
   $("titulo").textContent = x.t; $("tema").textContent = x.g;
   puntos.forEach((p, n) => p.classList.toggle("on", n === i));
+  document.querySelectorAll(".item").forEach((b, n) => b.classList.toggle("on", n === i));
   v.play().catch(() => {});
 }
 function estado() {
@@ -103,8 +133,8 @@ function estado() {
   $("ondas").style.display = v.muted ? "none" : ""; $("mute").style.display = v.muted ? "" : "none";
 }
 const alternar = () => v.paused ? v.play() : v.pause();
-$("ant").onclick = () => ir(i - 1);
-$("sig").onclick = () => ir(i + 1);
+$("ant").onclick = $("ant2").onclick = () => ir(i - 1);
+$("sig").onclick = $("sig2").onclick = () => ir(i + 1);
 $("play").onclick = alternar;
 v.onclick = alternar;
 $("atras").onclick = () => v.currentTime = Math.max(0, v.currentTime - 10);
@@ -116,7 +146,8 @@ const escena = document.querySelector(".escena"), marco = $("marco");
 function ajustar() {
   const a = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9;
   const vertical = matchMedia("(orientation:portrait)").matches;
-  const W = escena.clientWidth, H = vertical ? Infinity : escena.clientHeight;
+  const fl = $("ant").offsetWidth ? $("ant").offsetWidth * 2 + parseFloat(getComputedStyle(escena).gap) * 2 : 0;
+  const W = escena.clientWidth - fl, H = vertical ? Infinity : escena.clientHeight;
   let w = W, h = w / a; if (h > H) { h = H; w = h * a; }
   marco.style.aspectRatio = "auto"; marco.style.width = w + "px"; marco.style.height = h + "px";
   if (vertical) escena.style.height = h + "px"; else escena.style.height = "";
@@ -138,7 +169,15 @@ pista.onpointerdown = (e) => { arrastrando = true; pista.classList.add("arrastra
 pista.onpointermove = (e) => { if (arrastrando) pintar(aTiempo(e)); };
 pista.onpointerup = pista.onpointercancel = (e) => { if (!arrastrando) return; arrastrando = false; pista.classList.remove("arrastra"); v.currentTime = aTiempo(e); };
 v.onended = () => ir(i + 1);
+
+// lista desplegable: elegir un video directo
+$("lista").innerHTML = VIDEOS.map((x, k) => `<button class="item" data-k="${k}"><img src="img/${x.f}.jpg" alt="" loading="lazy"><span><b>${x.t}</b><small>${x.g}</small></span></button>`).join("");
+const lista = (abrir) => document.body.classList.toggle("abierta", abrir);
+$("abrir").onclick = () => lista(true);
+$("cerrar").onclick = $("velo").onclick = () => lista(false);
+document.querySelectorAll(".item").forEach((b) => b.onclick = () => { ir(+b.dataset.k); lista(false); });
 addEventListener("keydown", (e) => {
+  if (e.key === "Escape") return lista(false);
   if (e.key === "ArrowRight") ir(i + 1);
   else if (e.key === "ArrowLeft") ir(i - 1);
   else if (e.key === " ") { e.preventDefault(); alternar(); }
